@@ -17,12 +17,10 @@
 
 // Result
 struct Result {
-  float x;
-  float y;
-  float theta;
+  float heading;
 };
 
-const uint8_t MAX_RESULTS = 200;
+const uint8_t MAX_RESULTS = 1000;
 Result results[MAX_RESULTS];
 
 // PIN definitions.

@@ -50,8 +50,8 @@ unsigned long last_display_update_time;
 unsigned long pid_update_time;
 
 int results_index = 0;
-float results_interval_mm;
-float record_results_ds;
+unsigned long results_interval_ms;
+unsigned long record_results_ts;
 
 int pwm = 10;
 constexpr float ALPHA = 0.9;
@@ -97,14 +97,14 @@ void setup() {
   setupEncoder1();
   pose.initialise(0.0f, 0.0f, 0.0f);
 
-  // Wire.begin();
-  // while (!imu.initialise()) {
-  //   delay(1000);
-  // }
+  Wire.begin();
+  while (!imu.initialise()) {
+    delay(1000);
+  }
 
-  // while (!mag.initialise()) {
-  //   delay(1000);
-  // }
+  while (!mag.initialise()) {
+    delay(1000);
+  }
 
   // unsigned long calibration_time = millis();
 
@@ -117,10 +117,10 @@ void setup() {
   // motors.initialise();
   // bump_sensors.initialiseForDigital();
 
-  // Buzzer_c buzzer;
-  // buzzer.initialise();
+  Buzzer_c buzzer;
+  buzzer.initialise();
 
-  // buzzer.setBeepOnce(1, 250);
+  buzzer.setBeepOnce(3, 250);
   // bump_sensor_calibration_time = millis();
   // while (millis() - bump_sensor_calibration_time < 3000) {
   //   bump_sensors.calibration();
@@ -128,8 +128,8 @@ void setup() {
   //   delay(10);
   // }
   // buzzer.setBeepOnce(1, 1000);
-  // delay(1000);
-  // buzzer.reset();
+  delay(1000);
+  buzzer.reset();
   // delay(2000);
   // buzzer.setBeepOnce(1, 250);
 
@@ -153,8 +153,8 @@ void setup() {
   // motors.setPWM(pwm, pwm);
   // motors.setForwards();
 
-  results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
-  record_results_ds = pose.x;
+  results_interval_ms = (5000.0 / (float)MAX_RESULTS);
+  record_results_ts = millis();
 
 #ifdef ENABLE_SAR
   robot.initialise();
@@ -176,33 +176,30 @@ void loop() {
 #endif
   imu.update();
 
-  float elapsed_distance;
-  elapsed_distance = pose.x - record_results_ds;
+  unsigned long elapsed_time = millis() - record_results_ts;
 
-  if (elapsed_distance > results_interval_mm && state == 0) {
+  if (elapsed_time > results_interval_ms && state == 0) {
 
     // Move time stamp forwards for next
     // iteration.
-    record_results_ds = pose.x;
+    record_results_ts = millis();
 
     // Let's be safe and check we haven't
     // filled up the results array already.
     if (results_index < MAX_RESULTS) {
 
-      results[results_index].x = pose.x;
-      results[results_index].y = pose.y;
-      results[results_index].theta = pose.theta;
+      results[results_index].heading = yaw;
 
       // Increment result index for next time.
       results_index++;
     }
   }
 
-  // elapsed_time = millis() - update_time;
-  // if (elapsed_time >= 10) {
-  //   getHeading(elapsed_time);
-  //   update_time = millis();
-  // }
+  elapsed_time = millis() - update_time;
+  if (elapsed_time >= 10) {
+    getHeading(elapsed_time);
+    update_time = millis();
+  }
 
   // if (millis() - bump_sensor_update_time >= BUMP_SENSOR_UPDATE_INTERVAL_MS &&
   //     state == 0) {
@@ -218,37 +215,32 @@ void loop() {
   //   // Serial.print("\n");
   // }
 
-  if (millis() - pid_update_time >= PID_UPDATE_INTERVAL_MS) {
-    pid_update_time = millis();
-    float l_pwm = left_pid.update(demand, pose.speed_left);
-    float r_pwm = right_pid.update(demand, pose.speed_right);
-    // float rotate_correction = rotate_resist_pid.update(0.0f,
-    // imu.calibrated[5]);
-    float rotate_correction = 0.0f;
-    // float bump_correction = bump_pid.update(
-    //     0.0f, bump_sensors.calibrated[0] - bump_sensors.calibrated[1]);
-    float bump_correction = 0.0f;
+  // if (millis() - pid_update_time >= PID_UPDATE_INTERVAL_MS) {
+  //   pid_update_time = millis();
+  //   float l_pwm = left_pid.update(demand, pose.speed_left);
+  //   float r_pwm = right_pid.update(demand, pose.speed_right);
+  //   // float rotate_correction = rotate_resist_pid.update(0.0f,
+  //   // imu.calibrated[5]);
+  //   float rotate_correction = 0.0f;
+  //   // float bump_correction = bump_pid.update(
+  //   //     0.0f, bump_sensors.calibrated[0] - bump_sensors.calibrated[1]);
+  //   float bump_correction = 0.0f;
 
-    motors.setPWM(l_pwm - rotate_correction + bump_correction,
-                  r_pwm + rotate_correction - bump_correction);
-  }
+  //   motors.setPWM(l_pwm - rotate_correction + bump_correction,
+  //                 r_pwm + rotate_correction - bump_correction);
+  // }
 
   if (state == 1) {
 
     int result;
-    Serial.print(":x, y, theta\n");
+    Serial.print(":heading\n");
     for (result = 0; result < MAX_RESULTS; result++) {
-      Serial.print(results[result].x);
-      Serial.print(",");
-      Serial.print(results[result].y);
-      Serial.print(",");
-      Serial.print(results[result].theta);
+      Serial.print(results[result].heading);
       Serial.print("\n");
     }
   } else {
-    if (pose.x >= GOAL_DISTANCE) {
+    if (results_index >= MAX_RESULTS) {
       state = 1;
-      motors.setStop();
     }
   }
 
