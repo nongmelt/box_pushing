@@ -47,9 +47,6 @@ public:
   // magnetometer sensor
   bool initialise() {
 
-    // Start the I2C protocol
-    Wire.begin();
-
     // Try to connect to the magnetometer
     if (!mag.init()) {
       return false;

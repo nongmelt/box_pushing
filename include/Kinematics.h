@@ -133,8 +133,8 @@ public:
       last_e1_speed = count_e1;
       last_e0_speed = count_e0;
 
-      dist_left = (float)delta_e1_speed * MM_PER_COUNT;
-      dist_right = (float)delta_e0_speed * MM_PER_COUNT;
+      dist_left = (float)delta_e1_speed;
+      dist_right = (float)delta_e0_speed;
 
       total_dist_left += dist_left;
       total_dist_right += dist_right;
@@ -153,7 +153,7 @@ public:
   } // End of update()
 
 private:
-  static constexpr float ALPHA = 0.9;
+  static constexpr float ALPHA = 0.2;
 
   float prev_dist_left;
   float prev_dist_right;

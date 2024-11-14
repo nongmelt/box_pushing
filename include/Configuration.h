@@ -17,12 +17,12 @@
 
 // Result
 struct Result {
-  int pwm;
-  float left_speed;
-  float right_speed;
+  float x;
+  float y;
+  float theta;
 };
 
-const uint8_t MAX_RESULTS = 180;
+const uint8_t MAX_RESULTS = 200;
 Result results[MAX_RESULTS];
 
 // PIN definitions.
@@ -53,21 +53,11 @@ const int BUMP_SENSOR_PINS[BUMP_SENSORS_NUM] = {BUMP_LEFT_PIN, BUMP_RIGHT_PIN};
 #define MOTOR_MINIMUM_PWM 0.0f
 #define MOTOR_FWD LOW
 #define MOTOR_REV HIGH
-#define SPEED_MINIMUM_MS 0.10f // m/s
-#define SPEED_MAXIMUM_MS 1.05f // m/s
 
 // PID controller for motors speed
 #define K_P 125.0f
 #define K_D 0.0f
 #define K_I 0.003f
-
-#define K_P_STR 85.0f
-#define K_D_STR 0.1f
-#define K_I_STR 0.005f
-
-#define K_P_ROT 0.00316f
-#define K_D_ROT 0.0f
-#define K_I_ROT 0.0022f
 
 // Line sensors parameters
 // We will use all 5 line sensors (DN1 - 5)
@@ -86,13 +76,6 @@ const int BUMP_SENSOR_PINS[BUMP_SENSORS_NUM] = {BUMP_LEFT_PIN, BUMP_RIGHT_PIN};
 // sensors_pins[1] is A0.
 const int LINE_SENSOR_PINS[LINE_SENSORS_NUM] = {A11, A0, A2, A3, A4};
 
-#define LINE_SENSORS_THRESHOLD 0.70f
-#define MAGNETOMETER_DETECT_THRESHOLD 18
-
-// Target threshold
-#define TARGET_ROTATION_THRESHOLD DEG_TO_RAD * 10.0f
-#define TARGET_TRANSLATION_THRESHOLD 8.5f
-
 // Robot dimensions.  You will need
 // to calibrate these to get the best
 // performance. (see Lab sheet 4)
@@ -102,7 +85,7 @@ const int LINE_SENSOR_PINS[LINE_SENSORS_NUM] = {A11, A0, A2, A3, A4};
 
 // Update rates and durations for operations
 #define SPEED_EST_INTERVAL_MS 10
-#define PID_UPDATE_INTERVAL_MS 100
+#define PID_UPDATE_INTERVAL_MS 50
 #define CALIBRATION_INTERVAL_MS 10
 #define POSE_EST_INTERVAL_MS 10
 #define BUMP_SENSOR_UPDATE_INTERVAL_MS 10
@@ -116,17 +99,10 @@ const int LINE_SENSOR_PINS[LINE_SENSORS_NUM] = {A11, A0, A2, A3, A4};
 static const uint16_t DEFAULT_IDLE_TIMEOUT = 2000;
 static const uint32_t DEFAULT_SEARCH_TIMEOUT = 120000; // 2 mins
 
-// Command for search patterns
-const uint8_t MAX_COMMANDS = 8;
-
 template <typename T> T clamp(const T &value, const T &min, const T &max) {
   return (value < min) ? min : (value > max) ? max : value;
 }
 
-// Mapping coordinate
-const float X_OFFSET = -10.0f;
-const float Y_OFFSET = -225.0f;
-const float X_SCALE = 60.0f;
-const float Y_SCALE = 43.0f;
+const float GYRO_MEAN[3] = {4.2211f, -7.1859f, -2.9939f};
 
 #endif

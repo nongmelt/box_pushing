@@ -19,22 +19,18 @@
 class IMU_c {
 public:
   LSM6 imu;
-  // Magnetometer_c mag;
 
-  int16_t readings[6];
+  float readings[6];
   float g_mean[3];
-  int16_t calibrated[6];
-  int16_t prev_a_calibrated[3];
+  float calibrated[6];
+  float prev_a_calibrated[3];
+  float prev_a_reading[3];
+  float prev_g_calibrated[3];
   float n;
-
-  float roll = 0.0, pitch = 0.0, yaw = 0.0;
 
   IMU_c() {}
 
   bool initialise() {
-
-    // Start the I2C protocol
-    Wire.begin();
 
     if (!imu.init()) {
       return false;
@@ -48,6 +44,7 @@ public:
       for (size_t i = 0; i < 3; i++) {
         g_mean[i] = 0.0;
         prev_a_calibrated[i] = 0;
+        prev_a_reading[i] = 0;
       }
 
       return true;
@@ -56,12 +53,13 @@ public:
 
   void getReadings() {
     imu.read();
-    readings[0] = imu.a.x * 0.061 * 9.807; // m/s^2
-    readings[1] = imu.a.y * 0.061 * 9.807; // m/s^2
-    readings[2] = imu.a.z * 0.061 * 9.807; // m/s^2
-    readings[3] = imu.g.x * 8.75 / 1000;   // deg/s
-    readings[4] = imu.g.y * 8.75 / 1000;   // deg/s
-    readings[5] = imu.g.z * 8.75 / 1000;   // deg/s
+
+    readings[0] = imu.a.x * 0.061 / 1000 * 9.807; // m/s^2
+    readings[1] = imu.a.y * 0.061 / 1000 * 9.807; // m/s^2
+    readings[2] = imu.a.z * 0.061 / 1000 * 9.807; // m/s^2
+    readings[3] = imu.g.x * 8.75 / 1000;          // deg/s
+    readings[4] = imu.g.y * 8.75 / 1000;          // deg/s
+    readings[5] = imu.g.z * 8.75 / 1000;          // deg/s
   }
 
   void calibration() {
@@ -75,9 +73,13 @@ public:
   void calcCalibrated() {
     getReadings();
     for (size_t i = 0; i < 3; i++) {
-      // calibrated[i] = lowPassFilter(readings[i], prev_a_calibrated[i]);
-      // prev_a_calibrated[i] = calibrated[i];
-      calibrated[i + 3] = readings[i + 3] - g_mean[i];
+      calibrated[i] =
+          highPassFilter(readings[i], prev_a_reading[i], prev_a_calibrated[i]);
+      prev_a_calibrated[i] = calibrated[i];
+      prev_a_reading[i] = readings[i];
+      calibrated[i + 3] =
+          lowPassFilter(readings[i + 3] - GYRO_MEAN[i], prev_g_calibrated[i]);
+      prev_g_calibrated[i] = calibrated[i + 3];
     }
   }
 
@@ -91,10 +93,15 @@ public:
 
 private:
   unsigned long update_time;
-  static constexpr float ALPHA = 0.1;
+  static constexpr float LPF_ALPHA = 0.1;
+  static constexpr float HPF_ALPHA = 0.8;
 
-  int16_t lowPassFilter(float cur, float prev) {
-    return (ALPHA * cur + (1.0 - ALPHA) * prev);
+  float lowPassFilter(float cur, float prev) {
+    return (LPF_ALPHA * cur + (1.0 - LPF_ALPHA) * prev);
+  }
+
+  float highPassFilter(float cur, float prev, float filtered) {
+    return HPF_ALPHA * (filtered + cur - prev);
   }
 };
 

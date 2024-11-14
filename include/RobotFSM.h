@@ -208,20 +208,6 @@ private:
     display.gotoXY(0, 1);
     display.print("th:");
     display.print(pose.theta * RAD_TO_DEG);
-    display.gotoXY(0, 2);
-    display.print("->x:");
-    display.print(target_point.x);
-    display.gotoXY(5, 2);
-    display.print("->y:");
-    display.print(target_point.y);
-    display.gotoXY(0, 4);
-    display.print("mag_m:");
-    display.print(magnetometer.measurement);
-    display.gotoXY(0, 5);
-    display.print("mag_th:");
-    display.print(
-        atan2(magnetometer.calibrated[1], magnetometer.calibrated[0]) *
-        RAD_TO_DEG);
     display.gotoXY(17, 7);
     display.print(motors.modeToString(motors.current_mode));
     display.gotoXY(0, 7);
