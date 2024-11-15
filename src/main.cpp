@@ -20,58 +20,48 @@
 #include "Arduino.h"
 #include "BumpSensors.h"
 #include "Buzzer.h"
-#include "Encoders.h"
 #include "IMU.h"
-#include "Kinematics.h"
 #include "Magnetometer.h"
-#include "Motors.h"
-#include "PID.h"
+#include "PointTrackingController.h"
 #include "Wire.h"
 
-#ifdef ENABLE_SAR
-#include "RobotFSM.h"
+// void getHeading(unsigned long dt);
+// void displayUpdate();
 
-RobotFSM_c robot;
+// BumpSensors_c bump_sensors;
+// Magnetometer_c mag;
 
-#endif
-
-void getHeading(unsigned long dt);
-void displayUpdate();
-
-Motors_c motors;
-BumpSensors_c bump_sensors;
-Magnetometer_c mag;
-
-unsigned long bump_sensor_calibration_time;
+// unsigned long bump_sensor_calibration_time;
 unsigned long bump_sensor_update_time;
 unsigned long update_time;
-unsigned long motor_time;
-unsigned long last_display_update_time;
-unsigned long pid_update_time;
+// unsigned long motor_time;
+// unsigned long last_display_update_time;
 
-int results_index = 0;
+#ifdef PUSHER
+#include "Pusher.h"
+
+Pusher_c pusher;
+
 float results_interval_mm;
 float record_results_ds;
 
-int pwm = 10;
+#endif
+
+int results_index = 0;
+
 constexpr float ALPHA = 0.9;
 
-float roll = 0.0, pitch = 0.0, yaw = 0.0;
-float roll_g = 0.0, pitch_g = 0.0, yaw_g = 0.0;
+// float roll = 0.0, pitch = 0.0, yaw = 0.0;
+// float roll_g = 0.0, pitch_g = 0.0, yaw_g = 0.0;
 
-const int GOAL_DISTANCE = 500; // mm
+// PID_c rotate_resist_pid;
+// PID_c bump_pid;
 
-PID_c left_pid;
-PID_c right_pid;
-PID_c rotate_resist_pid;
-PID_c bump_pid;
-Kinematics_c pose;
+// PointTrackingController_c ptc;
 
-int state = 0;
+uint8_t state = 0;
 
-float demand = 0.5; // count / ms
-
-IMU_c imu;
+// IMU_c imu;
 
 #ifdef ENABLE_DISPLAY
 #include <PololuOLED.h>
@@ -83,19 +73,25 @@ void setup() {
   Serial.begin(9600);
   delay(2000);
 
-  left_pid.initialise(5.0f, 0.1f, 0.0);
-  right_pid.initialise(5.0f, 0.1f, 0.0);
-  rotate_resist_pid.initialise(1.8f, 0.0f, 0.0f);
-  bump_pid.initialise(30.0f, 0.1f, 0.0f);
+  // rotate_resist_pid.initialise(1.8f, 0.0f, 0.0f);
+  // bump_pid.initialise(30.0f, 0.1f, 0.0f);
+  // ptc.initialise(0.0005f, 0.01f);
 
-  left_pid.reset();
-  right_pid.reset();
-  rotate_resist_pid.reset();
-  bump_pid.reset();
+#ifdef PUSHER
+  pusher.initialise();
 
-  setupEncoder0();
-  setupEncoder1();
-  pose.initialise(0.0f, 0.0f, 0.0f);
+  results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
+  record_results_ds = pusher.pose.x;
+  pusher.setDesiredSpeed(DEMAND_SPEED, DEMAND_SPEED);
+#endif
+
+  // rotate_resist_pid.reset();
+  // bump_pid.reset();
+
+  // ptc.calculateDesiredSpeed(pose.x, pose.y, pose.theta, GOAL_DISTANCE,
+  //                           GOAL_DISTANCE);
+  // demand_left = ptc.desired_left_speed;
+  // demand_right = ptc.desired_right_speed;
 
   // Wire.begin();
   // while (!imu.initialise()) {
@@ -153,14 +149,6 @@ void setup() {
   // motors.setPWM(pwm, pwm);
   // motors.setForwards();
 
-  results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
-  record_results_ds = pose.x;
-
-#ifdef ENABLE_SAR
-  robot.initialise();
-  robot.setState(RobotFSM_c::State::IDLE);
-#endif
-
 #ifdef ENABLE_DISPLAY
   display.noAutoDisplay();
   display.setLayout21x8();
@@ -171,69 +159,52 @@ void setup() {
 
 // put your main code here, to run repeatedly:
 void loop() {
-#ifdef ENABLE_SAR
-  robot.update();
-#endif
-  imu.update();
+  // imu.update();
 
-  float elapsed_distance;
-  elapsed_distance = pose.x - record_results_ds;
+#ifdef PUSHER
+  float elapsed_distance = pusher.pose.x - record_results_ds;
 
   if (elapsed_distance > results_interval_mm && state == 0) {
 
     // Move time stamp forwards for next
     // iteration.
-    record_results_ds = pose.x;
+    record_results_ds = pusher.pose.x;
 
     // Let's be safe and check we haven't
     // filled up the results array already.
     if (results_index < MAX_RESULTS) {
 
-      results[results_index].x = pose.x;
-      results[results_index].y = pose.y;
-      results[results_index].theta = pose.theta;
+      results[results_index].x = pusher.pose.x;
+      results[results_index].y = pusher.pose.y;
+      results[results_index].theta = pusher.pose.theta;
 
       // Increment result index for next time.
       results_index++;
     }
   }
 
-  // elapsed_time = millis() - update_time;
-  // if (elapsed_time >= 10) {
-  //   getHeading(elapsed_time);
-  //   update_time = millis();
-  // }
+  if (state == 0) {
+    if (pusher.pose.x >= GOAL_DISTANCE) {
+      state = 1;
+      pusher.motors.setStop();
+    } else {
+      pusher.update();
 
-  // if (millis() - bump_sensor_update_time >= BUMP_SENSOR_UPDATE_INTERVAL_MS &&
-  //     state == 0) {
-  //   bump_sensors.calcCalibrated();
-  //   pose.update();
-  //   bump_sensor_update_time = millis();
+      // float rotate_correction = rotate_resist_pid.update(0.0f,
+      // imu.calibrated[5]);
+      // float rotate_correction = 0.0f;
+      // float bump_correction = bump_pid.update(
+      //     0.0f, bump_sensors.calibrated[0] - bump_sensors.calibrated[1]);
+      // float bump_correction = 0.0f;
+      // Serial.print(demand_left);
+      // Serial.print(",");
+      // Serial.print(demand_right);
+      // Serial.print(",");
+      // Serial.print(demand);
+      // Serial.print("\n");
+    }
 
-  //   // Serial.print(pwm);
-
-  //   // Serial.print(bump_sensors.calibrated[0] * 10.0, 4);
-  //   // Serial.print(",");
-  //   // Serial.print(bump_sensors.calibrated[1] * 10.0, 4);
-  //   // Serial.print("\n");
-  // }
-
-  if (millis() - pid_update_time >= PID_UPDATE_INTERVAL_MS) {
-    pid_update_time = millis();
-    float l_pwm = left_pid.update(demand, pose.speed_left);
-    float r_pwm = right_pid.update(demand, pose.speed_right);
-    // float rotate_correction = rotate_resist_pid.update(0.0f,
-    // imu.calibrated[5]);
-    float rotate_correction = 0.0f;
-    // float bump_correction = bump_pid.update(
-    //     0.0f, bump_sensors.calibrated[0] - bump_sensors.calibrated[1]);
-    float bump_correction = 0.0f;
-
-    motors.setPWM(l_pwm - rotate_correction + bump_correction,
-                  r_pwm + rotate_correction - bump_correction);
-  }
-
-  if (state == 1) {
+  } else if (state == 1) {
 
     int result;
     Serial.print(":x, y, theta\n");
@@ -245,11 +216,20 @@ void loop() {
       Serial.print(results[result].theta);
       Serial.print("\n");
     }
-  } else {
-    if (pose.x >= GOAL_DISTANCE) {
-      state = 1;
-      motors.setStop();
-    }
+  }
+
+#endif
+
+  // elapsed_time = millis() - update_time;
+  // if (elapsed_time >= 10) {
+  //   getHeading(elapsed_time);
+  //   update_time = millis();
+  // }
+
+  if (millis() - bump_sensor_update_time >= BUMP_SENSOR_UPDATE_INTERVAL_MS &&
+      state == 0) {
+    // bump_sensors.calcCalibrated();
+    bump_sensor_update_time = millis();
   }
 
 #ifdef ENABLE_DISPLAY
@@ -260,30 +240,32 @@ void loop() {
 #endif
 }
 
-void getHeading(unsigned long dt) {
-  float roll_acc = atan2(imu.calibrated[1], imu.calibrated[2]);
-  float pitch_acc =
-      atan2(-imu.calibrated[0], sqrtf(imu.calibrated[1] * imu.calibrated[1] +
-                                      imu.calibrated[2] * imu.calibrated[2]));
+// void getHeading(unsigned long dt) {
+//   float roll_acc = atan2(imu.calibrated[1], imu.calibrated[2]);
+//   float pitch_acc =
+//       atan2(-imu.calibrated[0], sqrtf(imu.calibrated[1] * imu.calibrated[1] +
+//                                       imu.calibrated[2] *
+//                                       imu.calibrated[2]));
 
-  float roll_mag = mag.calibrated[0] * cos(roll_acc) +
-                   mag.calibrated[1] * sin(roll_acc) * sin(pitch_acc) +
-                   mag.calibrated[2] * sin(roll_acc) * cos(pitch_acc);
-  float pitch_mag =
-      mag.calibrated[1] * cos(pitch_acc) - mag.calibrated[2] * sin(pitch_acc);
-  float yaw_mag = -mag.calibrated[0] * sin(roll_acc) +
-                  mag.calibrated[1] * cos(roll_acc) * sin(pitch_acc) +
-                  mag.calibrated[2] * cos(roll_acc) * cos(pitch_acc);
+//   float roll_mag = mag.calibrated[0] * cos(roll_acc) +
+//                    mag.calibrated[1] * sin(roll_acc) * sin(pitch_acc) +
+//                    mag.calibrated[2] * sin(roll_acc) * cos(pitch_acc);
+//   float pitch_mag =
+//       mag.calibrated[1] * cos(pitch_acc) - mag.calibrated[2] *
+//       sin(pitch_acc);
+//   float yaw_mag = -mag.calibrated[0] * sin(roll_acc) +
+//                   mag.calibrated[1] * cos(roll_acc) * sin(pitch_acc) +
+//                   mag.calibrated[2] * cos(roll_acc) * cos(pitch_acc);
 
-  float yaw_acc = atan2(-pitch_mag, roll_mag);
-  roll_g += imu.calibrated[3] * dt / 1000;
-  pitch_g += imu.calibrated[4] * dt / 1000;
-  yaw_g += imu.calibrated[5] * dt / 1000;
+//   float yaw_acc = atan2(-pitch_mag, roll_mag);
+//   roll_g += imu.calibrated[3] * dt / 1000;
+//   pitch_g += imu.calibrated[4] * dt / 1000;
+//   yaw_g += imu.calibrated[5] * dt / 1000;
 
-  roll = ALPHA * roll_g + (1 - ALPHA) * roll_acc;
-  pitch = ALPHA * pitch_g + (1 - ALPHA) * pitch_acc;
-  yaw = ALPHA * yaw_g + (1 - ALPHA) * yaw_acc;
-}
+//   roll = ALPHA * roll_g + (1 - ALPHA) * roll_acc;
+//   pitch = ALPHA * pitch_g + (1 - ALPHA) * pitch_acc;
+//   yaw = ALPHA * yaw_g + (1 - ALPHA) * yaw_acc;
+// }
 
 #ifdef ENABLE_DISPLAY
 void displayUpdate() {

@@ -11,18 +11,44 @@
 #ifndef _CONFIGURATION_H
 #define _CONFIGURATION_H
 
-// #define ENABLE_SAR
+// Experimentation parameters
+const int GOAL_DISTANCE = 500;    // mm
+const float BASE_SPEED = 0.20f;   // mm/ms
+const float DEMAND_SPEED = 0.30f; // mm/ms
 
 // #define ENABLE_DISPLAY
 
+#define PUSHER
+// #define OBSERVER
+
 // Result
+#ifdef PUSHER
+
 struct Result {
   float x;
   float y;
   float theta;
 };
 
-const uint8_t MAX_RESULTS = 200;
+const uint8_t MAX_RESULTS = 150;
+
+// PID controller for motors speed
+#define K_P 50.0f
+#define K_D 0.0f
+#define K_I 0.1f
+
+#endif
+
+#ifdef OBSERVER
+
+struct Result {
+  float yaw;
+};
+
+const uint8_t MAX_RESULTS = 150;
+
+#endif
+
 Result results[MAX_RESULTS];
 
 // PIN definitions.
@@ -53,11 +79,6 @@ const int BUMP_SENSOR_PINS[BUMP_SENSORS_NUM] = {BUMP_LEFT_PIN, BUMP_RIGHT_PIN};
 #define MOTOR_MINIMUM_PWM 0.0f
 #define MOTOR_FWD LOW
 #define MOTOR_REV HIGH
-
-// PID controller for motors speed
-#define K_P 125.0f
-#define K_D 0.0f
-#define K_I 0.003f
 
 // Line sensors parameters
 // We will use all 5 line sensors (DN1 - 5)
