@@ -13,13 +13,14 @@
 
 // Experimentation parameters
 const int GOAL_DISTANCE = 500;    // mm
+const float TOTAL_TIME = 5000.0f; // ms
 const float BASE_SPEED = 0.20f;   // mm/ms
 const float DEMAND_SPEED = 0.30f; // mm/ms
 
 // #define ENABLE_DISPLAY
 
-#define PUSHER
-// #define OBSERVER
+// #define PUSHER
+#define OBSERVER
 
 // Result
 #ifdef PUSHER
@@ -42,7 +43,7 @@ const uint8_t MAX_RESULTS = 150;
 #ifdef OBSERVER
 
 struct Result {
-  float yaw;
+  float heading;
 };
 
 const uint8_t MAX_RESULTS = 150;
@@ -111,6 +112,7 @@ const int LINE_SENSOR_PINS[LINE_SENSORS_NUM] = {A11, A0, A2, A3, A4};
 #define POSE_EST_INTERVAL_MS 10
 #define BUMP_SENSOR_UPDATE_INTERVAL_MS 10
 #define IMU_UPDATE_INTERVAL_MS 100
+#define HEADING_UPDATE_INTERVAL_MS 10
 
 #ifdef ENABLE_DISPLAY
 #define DISPLAY_INTERVAL_MS 10

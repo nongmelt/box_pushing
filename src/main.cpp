@@ -47,12 +47,17 @@ float record_results_ds;
 
 #endif
 
+#ifdef OBSERVER
+#include "Observer.h"
+
+Observer_c observer;
+
+unsigned long results_interval_ms;
+unsigned long record_results_ts;
+
+#endif
+
 int results_index = 0;
-
-constexpr float ALPHA = 0.9;
-
-// float roll = 0.0, pitch = 0.0, yaw = 0.0;
-// float roll_g = 0.0, pitch_g = 0.0, yaw_g = 0.0;
 
 // PID_c rotate_resist_pid;
 // PID_c bump_pid;
@@ -60,8 +65,6 @@ constexpr float ALPHA = 0.9;
 // PointTrackingController_c ptc;
 
 uint8_t state = 0;
-
-// IMU_c imu;
 
 #ifdef ENABLE_DISPLAY
 #include <PololuOLED.h>
@@ -85,6 +88,15 @@ void setup() {
   pusher.setDesiredSpeed(DEMAND_SPEED, DEMAND_SPEED);
 #endif
 
+#ifdef OBSERVER
+  observer.initialise();
+
+  results_interval_ms = (TOTAL_TIME / (float)MAX_RESULTS);
+  record_results_ts = millis();
+
+  observer.calibration();
+#endif
+
   // rotate_resist_pid.reset();
   // bump_pid.reset();
 
@@ -93,24 +105,6 @@ void setup() {
   // demand_left = ptc.desired_left_speed;
   // demand_right = ptc.desired_right_speed;
 
-  // Wire.begin();
-  // while (!imu.initialise()) {
-  //   delay(1000);
-  // }
-
-  // while (!mag.initialise()) {
-  //   delay(1000);
-  // }
-
-  // unsigned long calibration_time = millis();
-
-  // while (millis() - calibration_time <= 5000) {
-  //   mag.calibration();
-  //   delay(100);
-  // }
-  // mag.postCalibrated();
-
-  // motors.initialise();
   // bump_sensors.initialiseForDigital();
 
   // Buzzer_c buzzer;
@@ -159,7 +153,6 @@ void setup() {
 
 // put your main code here, to run repeatedly:
 void loop() {
-  // imu.update();
 
 #ifdef PUSHER
   float elapsed_distance = pusher.pose.x - record_results_ds;
@@ -220,11 +213,47 @@ void loop() {
 
 #endif
 
-  // elapsed_time = millis() - update_time;
-  // if (elapsed_time >= 10) {
-  //   getHeading(elapsed_time);
-  //   update_time = millis();
-  // }
+#ifdef OBSERVER
+  unsigned long elapsed_time = millis() - record_results_ts;
+
+  if (elapsed_time > results_interval_ms && state == 0) {
+
+    // Move time stamp forwards for next
+    // iteration.
+    record_results_ts = millis();
+
+    // Let's be safe and check we haven't
+    // filled up the results array already.
+    if (results_index < MAX_RESULTS) {
+
+      results[results_index].heading = observer.yaw;
+
+      // Increment result index for next time.
+      results_index++;
+    }
+  }
+  if (state == 0) {
+
+    // if (results_index >= MAX_RESULTS) {
+    //   state = 1;
+    // }
+    observer.update();
+
+    Serial.print(observer.roll);
+    Serial.print(",");
+    Serial.print(observer.pitch);
+    Serial.print(",");
+    Serial.print(observer.yaw);
+    Serial.print("\n");
+  } else if (state == 1) {
+    int result;
+    Serial.print(":heading\n");
+    for (result = 0; result < MAX_RESULTS; result++) {
+      Serial.print(results[result].heading);
+      Serial.print("\n");
+    }
+  }
+#endif
 
   if (millis() - bump_sensor_update_time >= BUMP_SENSOR_UPDATE_INTERVAL_MS &&
       state == 0) {
@@ -239,33 +268,6 @@ void loop() {
   }
 #endif
 }
-
-// void getHeading(unsigned long dt) {
-//   float roll_acc = atan2(imu.calibrated[1], imu.calibrated[2]);
-//   float pitch_acc =
-//       atan2(-imu.calibrated[0], sqrtf(imu.calibrated[1] * imu.calibrated[1] +
-//                                       imu.calibrated[2] *
-//                                       imu.calibrated[2]));
-
-//   float roll_mag = mag.calibrated[0] * cos(roll_acc) +
-//                    mag.calibrated[1] * sin(roll_acc) * sin(pitch_acc) +
-//                    mag.calibrated[2] * sin(roll_acc) * cos(pitch_acc);
-//   float pitch_mag =
-//       mag.calibrated[1] * cos(pitch_acc) - mag.calibrated[2] *
-//       sin(pitch_acc);
-//   float yaw_mag = -mag.calibrated[0] * sin(roll_acc) +
-//                   mag.calibrated[1] * cos(roll_acc) * sin(pitch_acc) +
-//                   mag.calibrated[2] * cos(roll_acc) * cos(pitch_acc);
-
-//   float yaw_acc = atan2(-pitch_mag, roll_mag);
-//   roll_g += imu.calibrated[3] * dt / 1000;
-//   pitch_g += imu.calibrated[4] * dt / 1000;
-//   yaw_g += imu.calibrated[5] * dt / 1000;
-
-//   roll = ALPHA * roll_g + (1 - ALPHA) * roll_acc;
-//   pitch = ALPHA * pitch_g + (1 - ALPHA) * pitch_acc;
-//   yaw = ALPHA * yaw_g + (1 - ALPHA) * yaw_acc;
-// }
 
 #ifdef ENABLE_DISPLAY
 void displayUpdate() {
