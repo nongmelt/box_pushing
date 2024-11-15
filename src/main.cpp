@@ -184,7 +184,7 @@ void loop() {
   }
 
   if (state == 0) {
-    if (pusher.pose.x >= GOAL_DISTANCE) {
+    if (pusher.pose.x > GOAL_DISTANCE) {
       state = 1;
       pusher.motors.setStop();
     } else {

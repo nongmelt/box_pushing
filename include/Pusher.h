@@ -69,11 +69,6 @@ public:
       float r_pwm = right_pid.update(desired_right_speed, pose.speed_right);
 
       motors.setPWM(l_pwm, r_pwm);
-
-      Serial.print(l_pwm);
-      Serial.print(",");
-      Serial.print(r_pwm);
-      Serial.print("\n");
     }
 
     if (millis() - pose_update_time >= POSE_EST_INTERVAL_MS) {
