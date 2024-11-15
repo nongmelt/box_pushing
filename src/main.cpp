@@ -18,21 +18,14 @@
 *******************************************/
 
 #include "Arduino.h"
-#include "BumpSensors.h"
 #include "Buzzer.h"
-#include "IMU.h"
-#include "Magnetometer.h"
 #include "PointTrackingController.h"
-#include "Wire.h"
 
-// void getHeading(unsigned long dt);
 // void displayUpdate();
 
 // BumpSensors_c bump_sensors;
 // Magnetometer_c mag;
 
-// unsigned long bump_sensor_calibration_time;
-unsigned long bump_sensor_update_time;
 unsigned long update_time;
 // unsigned long motor_time;
 // unsigned long last_display_update_time;
@@ -86,6 +79,28 @@ void setup() {
   results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
   record_results_ds = pusher.pose.x;
   pusher.setDesiredSpeed(DEMAND_SPEED, DEMAND_SPEED);
+
+#ifdef IMPROVEMENT
+
+  pusher.bump_sensors.initialiseForDigital();
+
+  Buzzer_c buzzer;
+  buzzer.initialise();
+
+  buzzer.setBeepOnce(3, 250);
+  unsigned long bump_sensor_calibration_time = millis();
+  while (millis() - bump_sensor_calibration_time < 3000) {
+    pusher.bump_sensors.calibration();
+    buzzer.update();
+    delay(10);
+  }
+  buzzer.setBeepOnce(2, 1000);
+  delay(1000);
+  buzzer.reset();
+
+  pusher.bump_sensors.postCalibrated();
+
+#endif
 #endif
 
 #ifdef OBSERVER
@@ -105,36 +120,9 @@ void setup() {
   // demand_left = ptc.desired_left_speed;
   // demand_right = ptc.desired_right_speed;
 
-  // bump_sensors.initialiseForDigital();
-
   // Buzzer_c buzzer;
   // buzzer.initialise();
 
-  // buzzer.setBeepOnce(1, 250);
-  // bump_sensor_calibration_time = millis();
-  // while (millis() - bump_sensor_calibration_time < 3000) {
-  //   bump_sensors.calibration();
-  //   buzzer.update();
-  //   delay(10);
-  // }
-  // buzzer.setBeepOnce(1, 1000);
-  // delay(1000);
-  // buzzer.reset();
-  // delay(2000);
-  // buzzer.setBeepOnce(1, 250);
-
-  // bump_sensor_calibration_time = millis();
-  // while (millis() - bump_sensor_calibration_time < 3000) {
-  //   bump_sensors.calibration();
-  //   buzzer.update();
-  //   delay(10);
-  // }
-
-  // bump_sensors.postCalibrated();
-
-  // buzzer.setBeepOnce(1, 1000);
-  // delay(2500);
-  // buzzer.reset();
   // bump_sensor_update_time = millis();
   // update_time = millis();
   // motor_time = millis();
@@ -182,19 +170,6 @@ void loop() {
       pusher.motors.setStop();
     } else {
       pusher.update();
-
-      // float rotate_correction = rotate_resist_pid.update(0.0f,
-      // imu.calibrated[5]);
-      // float rotate_correction = 0.0f;
-      // float bump_correction = bump_pid.update(
-      //     0.0f, bump_sensors.calibrated[0] - bump_sensors.calibrated[1]);
-      // float bump_correction = 0.0f;
-      // Serial.print(demand_left);
-      // Serial.print(",");
-      // Serial.print(demand_right);
-      // Serial.print(",");
-      // Serial.print(demand);
-      // Serial.print("\n");
     }
 
   } else if (state == 1) {
@@ -254,12 +229,6 @@ void loop() {
     }
   }
 #endif
-
-  if (millis() - bump_sensor_update_time >= BUMP_SENSOR_UPDATE_INTERVAL_MS &&
-      state == 0) {
-    // bump_sensors.calcCalibrated();
-    bump_sensor_update_time = millis();
-  }
 
 #ifdef ENABLE_DISPLAY
   if (millis() - last_display_update_time >= DISPLAY_INTERVAL_MS) {

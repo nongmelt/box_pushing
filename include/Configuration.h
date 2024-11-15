@@ -19,11 +19,13 @@ const float DEMAND_SPEED = 0.30f; // mm/ms
 
 // #define ENABLE_DISPLAY
 
-// #define PUSHER
-#define OBSERVER
+#define PUSHER
+// #define OBSERVER
 
 // Result
 #ifdef PUSHER
+
+#define IMPROVEMENT
 
 struct Result {
   float x;
@@ -37,6 +39,13 @@ const uint8_t MAX_RESULTS = 150;
 #define K_P 50.0f
 #define K_D 0.0f
 #define K_I 0.1f
+
+#ifdef IMPROVEMENT
+
+#define K_P_BUMP 1.0f
+#define K_D_BUMP 0.0f
+#define K_I_BUMP 0.0f
+#endif
 
 #endif
 
