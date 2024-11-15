@@ -48,10 +48,6 @@ public:
 
     pose.initialise(0.0f, 0.0f, 0.0f);
 
-    Serial.print("pose");
-    Serial.print(pose.x);
-    Serial.print(",");
-    Serial.println(pose.y);
     pose_update_time = millis();
     update_time = millis();
   }
