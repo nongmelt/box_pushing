@@ -10,6 +10,7 @@
 #include "Arduino.h"
 #include "Configuration.h"
 #include "Encoders.h"
+#include "IMU.h"
 #include "Kinematics.h"
 #include "Motors.h"
 #include "PID.h"
@@ -27,10 +28,13 @@ public:
   // Controller gains
   PID_c left_pid;
   PID_c right_pid;
+  // PID_c resist_pid;
 
   Motors_c motors;
 
   Kinematics_c pose;
+
+  // IMU_c imu;
 
   float desired_left_speed = 0.0f;
   float desired_right_speed = 0.0f;
@@ -52,11 +56,18 @@ public:
     setupEncoder0();
     setupEncoder1();
 
+    // Wire.begin();
+    // while (!imu.initialise()) {
+    //   delay(1000);
+    // }
+
     left_pid.initialise(K_P, K_I, K_D);
     right_pid.initialise(K_P, K_I, K_D);
+    // resist_pid.initialise(K_P_GYRO, K_I_GYRO, K_D_GYRO);
 
     left_pid.reset();
     right_pid.reset();
+    // resist_pid.reset();
 
 #ifdef IMPROVEMENT
     bump_pid.initialise(K_P_BUMP, K_I_BUMP, K_D_BUMP);
@@ -76,11 +87,16 @@ public:
   }
 
   void update() {
+    // imu.update();
     if (millis() - update_time >= PID_UPDATE_INTERVAL_MS) {
       update_time = millis();
 
       float l_pwm = left_pid.update(desired_left_speed, pose.speed_left);
       float r_pwm = right_pid.update(desired_right_speed, pose.speed_right);
+      // float gyro_correction = resist_pid.update(0.0f, imu.calibrated[5]);
+
+      // l_pwm -= gyro_correction;
+      // r_pwm += gyro_correction;
 
 #ifdef IMPROVEMENT
 

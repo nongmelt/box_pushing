@@ -23,12 +23,7 @@
 
 // void displayUpdate();
 
-// BumpSensors_c bump_sensors;
-// Magnetometer_c mag;
-
 unsigned long update_time;
-// unsigned long motor_time;
-// unsigned long last_display_update_time;
 
 #ifdef PUSHER
 #include "Pusher.h"
@@ -56,11 +51,6 @@ unsigned long record_results_ts;
 
 int results_index = 0;
 
-// PID_c rotate_resist_pid;
-// PID_c bump_pid;
-
-// PointTrackingController_c ptc;
-
 uint8_t state = 0;
 
 #ifdef ENABLE_DISPLAY
@@ -73,10 +63,17 @@ void setup() {
   Serial.begin(9600);
   delay(2000);
 
-  // rotate_resist_pid.initialise(1.8f, 0.0f, 0.0f);
-  // bump_pid.initialise(30.0f, 0.1f, 0.0f);
-
 #ifdef PUSHER
+  unsigned long calibration_time = millis();
+  Buzzer_c buzzer;
+  buzzer.initialise();
+  buzzer.setBeepWithInterval(3, 250, 500);
+  while (millis() - calibration_time <= 3000) {
+    delay(100);
+    buzzer.update();
+  }
+  buzzer.reset();
+
   pusher.initialise();
 
   results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
