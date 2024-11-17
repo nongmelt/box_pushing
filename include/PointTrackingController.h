@@ -16,7 +16,6 @@ public:
 
   float desired_left_speed = 0.0f;
   float desired_right_speed = 0.0f;
-  const float MM_PER_COUNT = (2.0 * WHEEL_RADIUS * PI) / COUNT_PER_REV;
 
   PointTrackingController_c() {}
 
@@ -38,13 +37,8 @@ public:
     float v_c = K1 * r * cos(phi);
     float w_c = -K1 * sin(phi) * cos(phi) - K2 * phi;
 
-    desired_left_speed = (v_c - w_c * WHEEL_RADIUS) / MM_PER_COUNT;
-    desired_right_speed = (v_c + w_c * WHEEL_RADIUS) / MM_PER_COUNT;
-
-    Serial.print(desired_left_speed);
-    Serial.print(",");
-    Serial.print(desired_right_speed);
-    Serial.print("\n");
+    desired_left_speed = (v_c - w_c * WHEEL_RADIUS);
+    desired_right_speed = (v_c + w_c * WHEEL_RADIUS);
   }
 };
 

@@ -25,7 +25,8 @@ const float DEMAND_SPEED = 0.30f; // mm/ms
 // Result
 #ifdef PUSHER
 
-#define IMPROVEMENT
+// #define IMPROVEMENT
+#define POINT_TRACKING
 
 struct Result {
   float x;
@@ -42,9 +43,9 @@ const uint8_t MAX_RESULTS = 150;
 
 #ifdef IMPROVEMENT
 
-#define K_P_BUMP 1.0f
+#define K_P_BUMP 30.0f
+#define K_I_BUMP 0.1f
 #define K_D_BUMP 0.0f
-#define K_I_BUMP 0.0f
 #endif
 
 #endif

@@ -38,6 +38,10 @@ Pusher_c pusher;
 float results_interval_mm;
 float record_results_ds;
 
+#ifdef POINT_TRACKING
+PointTrackingController_c ptc;
+#endif
+
 #endif
 
 #ifdef OBSERVER
@@ -71,7 +75,6 @@ void setup() {
 
   // rotate_resist_pid.initialise(1.8f, 0.0f, 0.0f);
   // bump_pid.initialise(30.0f, 0.1f, 0.0f);
-  // ptc.initialise(0.0005f, 0.01f);
 
 #ifdef PUSHER
   pusher.initialise();
@@ -79,6 +82,15 @@ void setup() {
   results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
   record_results_ds = pusher.pose.x;
   pusher.setDesiredSpeed(DEMAND_SPEED, DEMAND_SPEED);
+
+#ifdef POINT_TRACKING
+  ptc.initialise(0.001f, 0.01f);
+
+  ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
+                            GOAL_DISTANCE, 0.0f);
+  pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
+
+#endif
 
 #ifdef IMPROVEMENT
 
@@ -101,6 +113,7 @@ void setup() {
   pusher.bump_sensors.postCalibrated();
 
 #endif
+
 #endif
 
 #ifdef OBSERVER
@@ -113,23 +126,6 @@ void setup() {
 #endif
 
   // rotate_resist_pid.reset();
-  // bump_pid.reset();
-
-  // ptc.calculateDesiredSpeed(pose.x, pose.y, pose.theta, GOAL_DISTANCE,
-  //                           GOAL_DISTANCE);
-  // demand_left = ptc.desired_left_speed;
-  // demand_right = ptc.desired_right_speed;
-
-  // Buzzer_c buzzer;
-  // buzzer.initialise();
-
-  // bump_sensor_update_time = millis();
-  // update_time = millis();
-  // motor_time = millis();
-  // pid_update_time = millis();
-
-  // motors.setPWM(pwm, pwm);
-  // motors.setForwards();
 
 #ifdef ENABLE_DISPLAY
   display.noAutoDisplay();
@@ -170,6 +166,13 @@ void loop() {
       pusher.motors.setStop();
     } else {
       pusher.update();
+
+#ifdef POINT_TRACKING
+      ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
+                                GOAL_DISTANCE, 0.0f);
+      pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
+
+#endif
     }
 
   } else if (state == 1) {

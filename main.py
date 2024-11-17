@@ -8,7 +8,7 @@ filename = "result1.csv"
 def main():
     count = 0
     with open(filename, "w") as csvfile:
-        with serial.Serial("/dev/cu.usbmodem11301", 9600) as ser:
+        with serial.Serial("/dev/cu.usbmodem1301", 9600) as ser:
             while True:
                 line = ser.readline().decode("utf-8")
                 if line.startswith(":"):
