@@ -48,6 +48,7 @@ public:
 
     while (millis() - calibration_time <= 3000) {
       mag.calibration();
+      imu.calibration();
       delay(100);
     }
     mag.postCalibrated();
@@ -81,17 +82,13 @@ public:
                     mag.calibrated[2] * cos(roll_acc) * cos(pitch_acc);
 
     float yaw_acc = atan2(-pitch_mag, roll_mag);
-    roll_g += imu.calibrated[3] * dt / 1000;
-    pitch_g += imu.calibrated[4] * dt / 1000;
-    yaw_g += imu.calibrated[5] * dt / 1000;
+    roll_g += imu.calibrated[3] * dt / 1000.0;
+    pitch_g += imu.calibrated[4] * dt / 1000.0;
+    yaw_g += imu.calibrated[5] * dt / 1000.0;
 
     roll = ALPHA * roll_g + (1 - ALPHA) * roll_acc;
     pitch = ALPHA * pitch_g + (1 - ALPHA) * pitch_acc;
     yaw = ALPHA * yaw_g + (1 - ALPHA) * yaw_acc;
-
-    roll *= RAD_TO_DEG;
-    pitch *= RAD_TO_DEG;
-    yaw *= RAD_TO_DEG;
   }
 
 private:

@@ -78,7 +78,7 @@ public:
       prev_a_calibrated[i] = calibrated[i];
       prev_a_reading[i] = readings[i];
       calibrated[i + 3] =
-          lowPassFilter(readings[i + 3] - GYRO_MEAN[i], prev_g_calibrated[i]);
+          lowPassFilter(readings[i + 3] - g_mean[i], prev_g_calibrated[i]);
       prev_g_calibrated[i] = calibrated[i + 3];
     }
   }

@@ -12,10 +12,10 @@
 #define _CONFIGURATION_H
 
 // Experimentation parameters
-const int GOAL_DISTANCE = 500;    // mm
+const int GOAL_DISTANCE = 1000;   // mm
 const float TOTAL_TIME = 5000.0f; // ms
 const float BASE_SPEED = 0.20f;   // mm/ms
-const float DEMAND_SPEED = 0.30f; // mm/ms
+const float DEMAND_SPEED = 0.35f; // mm/ms
 
 // #define ENABLE_DISPLAY
 
@@ -26,7 +26,7 @@ const float DEMAND_SPEED = 0.30f; // mm/ms
 #ifdef PUSHER
 
 // #define IMPROVEMENT
-#define POINT_TRACKING
+// #define POINT_TRACKING
 
 struct Result {
   float x;
@@ -37,9 +37,9 @@ struct Result {
 const uint8_t MAX_RESULTS = 150;
 
 // PID controller for motors speed
-#define K_P 50.0f
+#define K_P 35.0f // L45 R35
 #define K_D 0.0f
-#define K_I 0.1f
+#define K_I 0.5f // L0.6 R0.5
 
 #ifdef IMPROVEMENT
 
@@ -135,7 +135,5 @@ static const uint32_t DEFAULT_SEARCH_TIMEOUT = 120000; // 2 mins
 template <typename T> T clamp(const T &value, const T &min, const T &max) {
   return (value < min) ? min : (value > max) ? max : value;
 }
-
-const float GYRO_MEAN[3] = {4.2211f, -7.1859f, -2.9939f};
 
 #endif
