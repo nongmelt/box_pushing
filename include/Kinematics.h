@@ -22,11 +22,6 @@
 extern volatile long count_e0;
 extern volatile long count_e1;
 
-// Take the circumference of the wheel and divide by the
-// number of counts per revolution. This provides the mm
-// travelled per encoder count.
-const float MM_PER_COUNT = (2.0 * WHEEL_RADIUS * PI) / COUNT_PER_REV;
-
 // Class to track robot position.
 class Kinematics_c {
 public:
@@ -35,8 +30,7 @@ public:
   float prev_x, prev_y, prev_theta;
 
   // Speed
-  float speed_left, speed_right, angular_velocity;
-  float total_dist_left, total_dist_right;
+  float speed_left, speed_right;
 
   // To calculate the difference
   // in encoder counts for each
@@ -59,9 +53,6 @@ public:
 
     speed_left = 0.0f;
     speed_right = 0.0f;
-    angular_velocity = 0.0f;
-    total_dist_left = 0.0f;
-    total_dist_right = 0.0f;
     prev_dist_left = 0.0f;
     prev_dist_right = 0.0f;
     prev_x = start_x;
@@ -135,9 +126,6 @@ public:
 
       dist_left = (float)delta_e1_speed * MM_PER_COUNT;
       dist_right = (float)delta_e0_speed * MM_PER_COUNT;
-
-      total_dist_left += dist_left;
-      total_dist_right += dist_right;
 
       speed_left =
           lowPassFilter(dist_left, prev_dist_left) / (float)elapsed_time;
