@@ -28,17 +28,13 @@ public:
   // Controller gains
   PID_c left_pid;
   PID_c right_pid;
-  // PID_c resist_pid;
 
   Motors_c motors;
 
   Kinematics_c pose;
 
-  // IMU_c imu;
-
   float desired_left_speed = 0.0f;
   float desired_right_speed = 0.0f;
-  const float MM_PER_COUNT = (2.0 * WHEEL_RADIUS * PI) / COUNT_PER_REV;
 
   unsigned long update_time;
   unsigned long pose_update_time;
@@ -47,7 +43,8 @@ public:
   BumpSensors_c bump_sensors;
   unsigned long bump_sensor_update_time;
 
-  PID_c bump_pid;
+  PID_c v_c_pid;
+  PID_c w_c_pid;
 #endif
 
   Pusher_c() {}
@@ -56,22 +53,17 @@ public:
     setupEncoder0();
     setupEncoder1();
 
-    // Wire.begin();
-    // while (!imu.initialise()) {
-    //   delay(1000);
-    // }
-
     left_pid.initialise(K_P, K_I, K_D);
     right_pid.initialise(K_P, K_I, K_D);
-    // resist_pid.initialise(K_P_GYRO, K_I_GYRO, K_D_GYRO);
 
     left_pid.reset();
     right_pid.reset();
-    // resist_pid.reset();
 
 #ifdef IMPROVEMENT
-    bump_pid.initialise(K_P_BUMP, K_I_BUMP, K_D_BUMP);
-    bump_pid.reset();
+    v_c_pid.initialise(K_P_V_BUMP, K_I_V_BUMP, K_D_V_BUMP);
+    w_c_pid.initialise(K_P_R_BUMP, K_I_R_BUMP, K_D_R_BUMP);
+    v_c_pid.reset();
+    w_c_pid.reset();
     bump_sensor_update_time = millis();
 #endif
 
@@ -82,30 +74,35 @@ public:
   }
 
   void setDesiredSpeed(float left_speed, float right_speed) {
-    desired_left_speed = left_speed;
-    desired_right_speed = right_speed;
+    desired_left_speed = max(BASE_SPEED, left_speed);
+    desired_right_speed = max(BASE_SPEED, right_speed);
   }
 
   void update() {
-    // imu.update();
     if (millis() - update_time >= PID_UPDATE_INTERVAL_MS) {
       update_time = millis();
 
+#ifdef IMPROVEMENT
+      float r = sqrtf(powf(GOAL_DISTANCE - pose.x, 2) + pow(0.0f - pose.y, 2));
+
+      // BASE SPEED for bumper controller
+      // Assuming that leader goes straight
+      float v_c = K1_PTC * r;
+
+      v_c += v_c_pid.update(
+          BUMP_THRESHOLD,
+          (bump_sensors.calibrated[0] + bump_sensors.calibrated[1]) / 2.0f);
+      float w_c = w_c_pid.update(0.0f, bump_sensors.calibrated[1] -
+                                           bump_sensors.calibrated[0]);
+
+      setDesiredSpeed(v_c - w_c * WHEEL_RADIUS, v_c + w_c * WHEEL_RADIUS);
+
+      Serial.print("\n");
+
+#endif
+
       float l_pwm = left_pid.update(desired_left_speed, pose.speed_left);
       float r_pwm = right_pid.update(desired_right_speed, pose.speed_right);
-      // float gyro_correction = resist_pid.update(0.0f, imu.calibrated[5]);
-
-      // l_pwm -= gyro_correction;
-      // r_pwm += gyro_correction;
-
-#ifdef IMPROVEMENT
-
-      float bump_correction = bump_pid.update(
-          0.0f, bump_sensors.calibrated[0] - bump_sensors.calibrated[1]);
-
-      l_pwm += bump_correction;
-      r_pwm -= bump_correction;
-#endif
 
       motors.setPWM(l_pwm, r_pwm);
     }

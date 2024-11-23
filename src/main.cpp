@@ -67,36 +67,20 @@ void setup() {
   unsigned long calibration_time = millis();
   Buzzer_c buzzer;
   buzzer.initialise();
-  buzzer.setBeepWithInterval(3, 250, 500);
-  while (millis() - calibration_time <= 3000) {
+  buzzer.setBeepWithInterval(2, 250, 500);
+  while (millis() - calibration_time <= 1000) {
     delay(100);
     buzzer.update();
   }
   buzzer.reset();
-
-  pusher.initialise();
-
-  results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
-  record_results_ds = pusher.pose.x;
-  pusher.setDesiredSpeed(DEMAND_SPEED, DEMAND_SPEED);
-
-#ifdef POINT_TRACKING
-  ptc.initialise(0.001f, 0.01f);
-
-  ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
-                            GOAL_DISTANCE, 0.0f);
-  pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
-
-#endif
+  buzzer.setBeepOnce(2, 1000);
+  delay(1000);
 
 #ifdef IMPROVEMENT
 
   pusher.bump_sensors.initialiseForDigital();
 
-  Buzzer_c buzzer;
-  buzzer.initialise();
-
-  buzzer.setBeepOnce(3, 250);
+  buzzer.setBeepOnce(2, 250);
   unsigned long bump_sensor_calibration_time = millis();
   while (millis() - bump_sensor_calibration_time < 3000) {
     pusher.bump_sensors.calibration();
@@ -104,12 +88,26 @@ void setup() {
     delay(10);
   }
   buzzer.setBeepOnce(2, 1000);
-  delay(1000);
+  delay(3000);
   buzzer.reset();
-
   pusher.bump_sensors.postCalibrated();
 
 #endif
+
+#ifdef POINT_TRACKING
+  ptc.initialise(K1_PTC, K2_PTC);
+
+  ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
+                            GOAL_DISTANCE, 0.0f);
+  pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
+
+#endif
+
+  pusher.initialise();
+
+  results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
+  record_results_ds = pusher.pose.x;
+  pusher.setDesiredSpeed(DEMAND_SPEED, DEMAND_SPEED);
 
 #endif
 
@@ -120,15 +118,6 @@ void setup() {
   record_results_ts = millis();
 
   observer.calibration();
-#endif
-
-  // rotate_resist_pid.reset();
-
-#ifdef ENABLE_DISPLAY
-  display.noAutoDisplay();
-  display.setLayout21x8();
-
-  last_display_update_time = millis();
 #endif
 }
 
@@ -151,6 +140,10 @@ void loop() {
       results[results_index].x = pusher.pose.x;
       results[results_index].y = pusher.pose.y;
       results[results_index].theta = pusher.pose.theta;
+      results[results_index].left_speed = pusher.pose.speed_left;
+      results[results_index].right_speed = pusher.pose.speed_right;
+      results[results_index].left_bump = pusher.bump_sensors.calibrated[0];
+      results[results_index].right_bump = pusher.bump_sensors.calibrated[1];
 
       // Increment result index for next time.
       results_index++;
@@ -168,20 +161,27 @@ void loop() {
       ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
                                 GOAL_DISTANCE, 0.0f);
       pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
-
 #endif
     }
-
   } else if (state == 1) {
 
     int result;
-    Serial.print(":x, y, theta\n");
+    Serial.print(
+        ":x, y, theta, left_speed, right_speed, left_bump, right_bump\n");
     for (result = 0; result < MAX_RESULTS; result++) {
       Serial.print(results[result].x);
       Serial.print(",");
       Serial.print(results[result].y);
       Serial.print(",");
       Serial.print(results[result].theta);
+      Serial.print(",");
+      Serial.print(results[result].left_speed);
+      Serial.print(",");
+      Serial.print(results[result].right_speed);
+      Serial.print(",");
+      Serial.print(results[result].left_bump);
+      Serial.print(",");
+      Serial.print(results[result].right_bump);
       Serial.print("\n");
     }
   }
@@ -229,41 +229,4 @@ void loop() {
     }
   }
 #endif
-
-#ifdef ENABLE_DISPLAY
-  if (millis() - last_display_update_time >= DISPLAY_INTERVAL_MS) {
-    displayUpdate();
-    last_display_update_time = millis();
-  }
-#endif
 }
-
-#ifdef ENABLE_DISPLAY
-void displayUpdate() {
-  display.gotoXY(0, 0);
-  display.print("yaw:");
-  display.print(yaw);
-  display.gotoXY(0, 2);
-  display.print("g_z:");
-  display.print(imu.calibrated[5]);
-  display.gotoXY(0, 4);
-  display.print("bl:");
-  display.print(bump_sensors.calibrated[0]);
-  display.gotoXY(0, 5);
-  display.print("mx:");
-  display.print(bump_sensors.maximum[0]);
-  display.gotoXY(10, 5);
-  display.print("mn:");
-  display.print(bump_sensors.minimum[0]);
-  display.gotoXY(0, 6);
-  display.print("bl:");
-  display.print(bump_sensors.calibrated[1]);
-  display.gotoXY(0, 7);
-  display.print("mx:");
-  display.print(bump_sensors.maximum[1]);
-  display.gotoXY(10, 7);
-  display.print("mn:");
-  display.print(bump_sensors.minimum[1]);
-  display.display();
-}
-#endif

@@ -14,10 +14,8 @@
 // Experimentation parameters
 const int GOAL_DISTANCE = 1000;   // mm
 const float TOTAL_TIME = 5000.0f; // ms
-const float BASE_SPEED = 0.20f;   // mm/ms
-const float DEMAND_SPEED = 0.35f; // mm/ms
-
-// #define ENABLE_DISPLAY
+const float BASE_SPEED = 0.14f;   // mm/ms
+const float DEMAND_SPEED = 0.35f; // mm/ms, initial speed
 
 #define PUSHER
 // #define OBSERVER
@@ -25,16 +23,20 @@ const float DEMAND_SPEED = 0.35f; // mm/ms
 // Result
 #ifdef PUSHER
 
-// #define IMPROVEMENT
+#define IMPROVEMENT
 // #define POINT_TRACKING
 
 struct Result {
   float x;
   float y;
   float theta;
+  float left_speed;
+  float right_speed;
+  float left_bump;
+  float right_bump;
 };
 
-const uint8_t MAX_RESULTS = 150;
+const uint8_t MAX_RESULTS = 65;
 
 // PID controller for motors speed
 #define K_P 35.0f // L45 R35
@@ -43,9 +45,18 @@ const uint8_t MAX_RESULTS = 150;
 
 #ifdef IMPROVEMENT
 
-#define K_P_BUMP 30.0f
-#define K_I_BUMP 0.1f
-#define K_D_BUMP 0.0f
+#define K_P_V_BUMP 0.5f
+#define K_I_V_BUMP 0.0f
+#define K_D_V_BUMP 0.0f
+
+#define K_P_R_BUMP 0.021875f
+#define K_I_R_BUMP 0.0f
+#define K_D_R_BUMP 0.0f
+
+#define K1_PTC 0.00065f
+#define K2_PTC 0.04f
+
+#define BUMP_THRESHOLD 0.5f
 #endif
 
 #endif
@@ -114,6 +125,7 @@ const int LINE_SENSOR_PINS[LINE_SENSORS_NUM] = {A11, A0, A2, A3, A4};
 #define COUNT_PER_REV 358.3 // From documentation - correct.
 #define WHEEL_RADIUS 16.0   // mm
 #define WHEEL_SEP 43.5      // mm, from centre of robot to wheel centre
+const float MM_PER_COUNT = (2.0 * WHEEL_RADIUS * PI) / COUNT_PER_REV;
 
 // Update rates and durations for operations
 #define SPEED_EST_INTERVAL_MS 10
@@ -123,10 +135,6 @@ const int LINE_SENSOR_PINS[LINE_SENSORS_NUM] = {A11, A0, A2, A3, A4};
 #define BUMP_SENSOR_UPDATE_INTERVAL_MS 10
 #define IMU_UPDATE_INTERVAL_MS 100
 #define HEADING_UPDATE_INTERVAL_MS 10
-
-#ifdef ENABLE_DISPLAY
-#define DISPLAY_INTERVAL_MS 10
-#endif
 
 // Finite State Machine Configuration
 static const uint16_t DEFAULT_IDLE_TIMEOUT = 2000;
