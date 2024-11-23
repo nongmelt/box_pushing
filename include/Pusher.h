@@ -8,17 +8,13 @@
 ****************************************/
 
 #include "Arduino.h"
+#include "BumpSensors.h"
 #include "Configuration.h"
 #include "Encoders.h"
 #include "IMU.h"
 #include "Kinematics.h"
 #include "Motors.h"
 #include "PID.h"
-
-#ifdef IMPROVEMENT
-#include "BumpSensors.h"
-
-#endif
 
 #ifndef _PUSHER_H
 #define _PUSHER_H
@@ -39,9 +35,10 @@ public:
   unsigned long update_time;
   unsigned long pose_update_time;
 
-#ifdef IMPROVEMENT
   BumpSensors_c bump_sensors;
   unsigned long bump_sensor_update_time;
+
+#ifdef IMPROVEMENT
 
   PID_c v_c_pid;
   PID_c w_c_pid;
@@ -64,13 +61,13 @@ public:
     w_c_pid.initialise(K_P_R_BUMP, K_I_R_BUMP, K_D_R_BUMP);
     v_c_pid.reset();
     w_c_pid.reset();
-    bump_sensor_update_time = millis();
 #endif
 
     pose.initialise(0.0f, 0.0f, 0.0f);
 
     pose_update_time = millis();
     update_time = millis();
+    bump_sensor_update_time = millis();
   }
 
   void setDesiredSpeed(float left_speed, float right_speed) {
@@ -97,8 +94,6 @@ public:
 
       setDesiredSpeed(v_c - w_c * WHEEL_RADIUS, v_c + w_c * WHEEL_RADIUS);
 
-      Serial.print("\n");
-
 #endif
 
       float l_pwm = left_pid.update(desired_left_speed, pose.speed_left);
@@ -112,12 +107,10 @@ public:
       pose.update();
     }
 
-#ifdef IMPROVEMENT
     if (millis() - bump_sensor_update_time >= BUMP_SENSOR_UPDATE_INTERVAL_MS) {
       bump_sensors.calcCalibrated();
       bump_sensor_update_time = millis();
     }
-#endif
   }
 };
 

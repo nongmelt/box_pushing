@@ -21,8 +21,6 @@
 #include "Buzzer.h"
 #include "PointTrackingController.h"
 
-// void displayUpdate();
-
 unsigned long update_time;
 
 #ifdef PUSHER
@@ -52,11 +50,6 @@ unsigned long record_results_ts;
 int results_index = 0;
 
 uint8_t state = 0;
-
-#ifdef ENABLE_DISPLAY
-#include <PololuOLED.h>
-PololuSH1106 display(1, 30, 0, 17, 13);
-#endif
 
 void setup() {
 
@@ -166,8 +159,7 @@ void loop() {
   } else if (state == 1) {
 
     int result;
-    Serial.print(
-        ":x, y, theta, left_speed, right_speed, left_bump, right_bump\n");
+    Serial.print(":x, y, theta, left_speed, right_speed\n");
     for (result = 0; result < MAX_RESULTS; result++) {
       Serial.print(results[result].x);
       Serial.print(",");
@@ -178,10 +170,10 @@ void loop() {
       Serial.print(results[result].left_speed);
       Serial.print(",");
       Serial.print(results[result].right_speed);
-      Serial.print(",");
-      Serial.print(results[result].left_bump);
-      Serial.print(",");
-      Serial.print(results[result].right_bump);
+      // Serial.print(",");
+      // Serial.print(results[result].left_bump);
+      // Serial.print(",");
+      // Serial.print(results[result].right_bump);
       Serial.print("\n");
     }
   }
