@@ -54,12 +54,12 @@ public:
   void getReadings() {
     imu.read();
 
-    readings[0] = imu.a.x * 0.061 / 1000 * 9.807;     // m/s^2
-    readings[1] = imu.a.y * 0.061 / 1000 * 9.807;     // m/s^2
-    readings[2] = imu.a.z * 0.061 / 1000 * 9.807;     // m/s^2
-    readings[3] = imu.g.x * 8.75 / 1000 * DEG_TO_RAD; // rad/s
-    readings[4] = imu.g.y * 8.75 / 1000 * DEG_TO_RAD; // rad/s
-    readings[5] = imu.g.z * 8.75 / 1000 * DEG_TO_RAD; // rad/s
+    readings[0] = imu.a.x * 0.061 / 1000 * 9.807; // m/s^2
+    readings[1] = imu.a.y * 0.061 / 1000 * 9.807; // m/s^2
+    readings[2] = imu.a.z * 0.061 / 1000 * 9.807; // m/s^2
+    readings[3] = imu.g.x * 8.75 / 1000;          // deg/s
+    readings[4] = imu.g.y * 8.75 / 1000;          // deg/s
+    readings[5] = imu.g.z * 8.75 / 1000;          // deg/s
   }
 
   void calibration() {

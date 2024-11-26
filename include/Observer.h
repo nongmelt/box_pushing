@@ -61,38 +61,43 @@ public:
 
     unsigned long elapsed_time = millis() - update_time;
     if (elapsed_time >= HEADING_UPDATE_INTERVAL_MS) {
+      mag.calcCalibrated();
       getHeading(elapsed_time);
       update_time = millis();
     }
   }
 
   void getHeading(unsigned long dt) {
-    float roll_acc = atan2(imu.calibrated[1], imu.calibrated[2]); // rad
-    float pitch_acc =
-        atan2(-imu.calibrated[0], sqrtf(imu.calibrated[1] * imu.calibrated[1] +
-                                        imu.calibrated[2] * imu.calibrated[2]));
-
-    float roll_mag = mag.calibrated[0] * cos(roll_acc) +
-                     mag.calibrated[1] * sin(roll_acc) * sin(pitch_acc) +
-                     mag.calibrated[2] * sin(roll_acc) * cos(pitch_acc);
-    float pitch_mag =
-        mag.calibrated[1] * cos(pitch_acc) - mag.calibrated[2] * sin(pitch_acc);
-    float yaw_mag = -mag.calibrated[0] * sin(roll_acc) +
-                    mag.calibrated[1] * cos(roll_acc) * sin(pitch_acc) +
-                    mag.calibrated[2] * cos(roll_acc) * cos(pitch_acc);
-
-    float yaw_acc = atan2(-pitch_mag, roll_mag);
-    roll_g += imu.calibrated[3] * dt / 1000.0;
-    pitch_g += imu.calibrated[4] * dt / 1000.0;
     yaw_g += imu.calibrated[5] * dt / 1000.0;
+    // float roll_acc = atan2(imu.calibrated[1], imu.calibrated[2]); // rad
+    // float pitch_acc =
+    //     atan2(-imu.calibrated[0], sqrtf(imu.calibrated[1] * imu.calibrated[1]
+    //     +
+    //                                     imu.calibrated[2] *
+    //                                     imu.calibrated[2]));
 
-    roll = ALPHA * roll_g + (1 - ALPHA) * roll_acc;
-    pitch = ALPHA * pitch_g + (1 - ALPHA) * pitch_acc;
-    yaw = ALPHA * yaw_g + (1 - ALPHA) * yaw_acc;
+    // float roll_mag = mag.calibrated[0] * cos(roll_acc) +
+    //                  mag.calibrated[1] * sin(roll_acc) * sin(pitch_acc) +
+    //                  mag.calibrated[2] * sin(roll_acc) * cos(pitch_acc);
+    // float pitch_mag =
+    //     mag.calibrated[1] * cos(pitch_acc) - mag.calibrated[2] *
+    //     sin(pitch_acc);
+    // float yaw_mag = -mag.calibrated[0] * sin(roll_acc) +
+    //                 mag.calibrated[1] * cos(roll_acc) * sin(pitch_acc) +
+    //                 mag.calibrated[2] * cos(roll_acc) * cos(pitch_acc);
+
+    // float yaw_acc = atan2(-pitch_mag, roll_mag);
+    // roll_g += imu.calibrated[3] * dt / 1000.0;
+    // pitch_g += imu.calibrated[4] * dt / 1000.0;
+    // yaw_g += imu.calibrated[5] * dt / 1000.0;
+
+    // roll = ALPHA * roll_g + (1 - ALPHA) * roll_acc;
+    // pitch = ALPHA * pitch_g + (1 - ALPHA) * pitch_acc;
+    // yaw = ALPHA * yaw_g + (1 - ALPHA) * yaw_acc;
   }
 
 private:
-  constexpr static float ALPHA = 0.9;
+  constexpr static float ALPHA = 1.0;
 };
 
 #endif
