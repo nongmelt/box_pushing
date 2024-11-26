@@ -12,9 +12,10 @@
 #define _CONFIGURATION_H
 
 // Experimentation parameters
-const int GOAL_DISTANCE = 1000;   // mm
-const float TOTAL_TIME = 5000.0f; // ms
-const float BASE_SPEED = 0.14f;   // mm/ms
+const int GOAL_DISTANCE = 1000; // mm
+const int GOAL_PTC_DISTANCE = 1220;
+const float TOTAL_TIME = 8000.0f; // ms
+const float BASE_SPEED = 0.20f;   // mm/ms
 const float DEMAND_SPEED = 0.35f; // mm/ms, initial speed
 
 #define PUSHER
@@ -23,8 +24,9 @@ const float DEMAND_SPEED = 0.35f; // mm/ms, initial speed
 // Result
 #ifdef PUSHER
 
-#define IMPROVEMENT
-// #define POINT_TRACKING
+// #define BUMPER_CONTROLLER
+#define POINT_TRACKING
+// #define IMPROVEMENT
 
 struct Result {
   float x;
@@ -39,24 +41,35 @@ struct Result {
 const uint8_t MAX_RESULTS = 65;
 
 // PID controller for motors speed
-#define K_P 35.0f // L45 R35
+#define K_P 35.0f
 #define K_D 0.0f
-#define K_I 0.5f // L0.6 R0.5
+#define K_I 0.5f
 
-#ifdef IMPROVEMENT
+#ifdef BUMPER_CONTROLLER
 
-#define K_P_V_BUMP 0.5f
-#define K_I_V_BUMP 0.0f
+#define K_P_V_BUMP 0.085f // 0.085f - bumper
+#define K_I_V_BUMP 0.0f   // 0.0f - bumper
 #define K_D_V_BUMP 0.0f
 
-#define K_P_R_BUMP 0.021875f
-#define K_I_R_BUMP 0.0f
+#define K_P_R_BUMP 0.021875f // 0.021875f - bumper
+#define K_I_R_BUMP 0.0f      // 0.0f - bumper
 #define K_D_R_BUMP 0.0f
 
-#define K1_PTC 0.00065f
+#define BUMP_THRESHOLD 0.12f
+#endif
+
+#ifdef POINT_TRACKING
+#define K1_PTC 0.00065f // 0.00065f - ptc
+#define K2_PTC 0.04f    // 0.04f - ptc
+#endif
+
+#ifdef IMPROVEMENT
+#define K1_PTC 0.000375f
 #define K2_PTC 0.04f
 
-#define BUMP_THRESHOLD 0.5f
+#define K_P_BUMP 0.0001f
+#define K_I_BUMP 0.0f
+#define K_D_BUMP 0.0f
 #endif
 
 #endif
@@ -67,7 +80,7 @@ struct Result {
   float heading;
 };
 
-const uint8_t MAX_RESULTS = 150;
+const uint8_t MAX_RESULTS = 250;
 
 #endif
 
@@ -91,6 +104,11 @@ Result results[MAX_RESULTS];
 #define BUMP_SENSORS_NUM 2
 // Left, Right
 const int BUMP_SENSOR_PINS[BUMP_SENSORS_NUM] = {BUMP_LEFT_PIN, BUMP_RIGHT_PIN};
+// const float RANGE[BUMP_SENSORS_NUM] = {782.4, 916.0};
+// const float MINIMUM[BUMP_SENSORS_NUM] = {506.4, 704.0};
+
+const float RANGE[BUMP_SENSORS_NUM] = {1392.8, 1490.4};
+const float MINIMUM[BUMP_SENSORS_NUM] = {632.8, 667.2};
 
 // Motor parameters
 // It is a good idea to limit the maximum power
@@ -134,7 +152,7 @@ const float MM_PER_COUNT = (2.0 * WHEEL_RADIUS * PI) / COUNT_PER_REV;
 #define POSE_EST_INTERVAL_MS 10
 #define BUMP_SENSOR_UPDATE_INTERVAL_MS 10
 #define IMU_UPDATE_INTERVAL_MS 100
-#define HEADING_UPDATE_INTERVAL_MS 10
+#define HEADING_UPDATE_INTERVAL_MS 105
 
 // Finite State Machine Configuration
 static const uint16_t DEFAULT_IDLE_TIMEOUT = 2000;

@@ -24,6 +24,8 @@ public:
     K2 = k2;
   }
 
+  void setGain(float k1, float k2) { initialise(k1, k2); }
+
   void calculateDesiredSpeed(float cur_x, float cur_y, float cur_theta,
                              float target_x, float target_y) {
     float r = sqrtf(powf(target_x - cur_x, 2) + pow(target_y - cur_y, 2));
