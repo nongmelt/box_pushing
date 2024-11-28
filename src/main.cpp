@@ -69,36 +69,32 @@ void setup() {
   buzzer.setBeepOnce(2, 1000);
   delay(1000);
 
-#ifdef IMPROVEMENT
-
   pusher.bump_sensors.initialiseForDigital();
 
-  buzzer.setBeepOnce(2, 250);
-  unsigned long bump_sensor_calibration_time = millis();
-  while (millis() - bump_sensor_calibration_time < 3000) {
-    pusher.bump_sensors.calibration();
-    buzzer.update();
-    delay(10);
-  }
-  buzzer.setBeepOnce(2, 1000);
-  delay(3000);
-  buzzer.reset();
-  pusher.bump_sensors.postCalibrated();
-
-#endif
+  // buzzer.setBeepOnce(2, 250);
+  // unsigned long bump_sensor_calibration_time = millis();
+  // while (millis() - bump_sensor_calibration_time < 3000) {
+  //   pusher.bump_sensors.calibration();
+  //   buzzer.update();
+  //   delay(10);
+  // }
+  // buzzer.setBeepOnce(2, 1000);
+  // delay(3000);
+  // buzzer.reset();
+  // pusher.bump_sensors.postCalibrated();
 
 #ifdef POINT_TRACKING
   ptc.initialise(K1_PTC, K2_PTC);
 
   ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
-                            GOAL_DISTANCE, 0.0f);
+                            GOAL_PTC_DISTANCE, 0.0f);
   pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
 
 #endif
 
   pusher.initialise();
 
-  results_interval_mm = ((float)GOAL_DISTANCE / (float)MAX_RESULTS);
+  results_interval_mm = ((float)GOAL_DISTANCE * 0.95f / (float)MAX_RESULTS);
   record_results_ds = pusher.pose.x;
   pusher.setDesiredSpeed(DEMAND_SPEED, DEMAND_SPEED);
 
@@ -111,6 +107,8 @@ void setup() {
   record_results_ts = millis();
 
   observer.calibration();
+  delay(1000);
+
 #endif
 }
 
@@ -152,14 +150,15 @@ void loop() {
 
 #ifdef POINT_TRACKING
       ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
-                                GOAL_DISTANCE, 0.0f);
+                                GOAL_PTC_DISTANCE, 0.0f);
       pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
 #endif
     }
   } else if (state == 1) {
 
     int result;
-    Serial.print(":x, y, theta, left_speed, right_speed\n");
+    Serial.print(
+        ":x, y, theta, left_speed, right_speed, left_bump, right_bump\n");
     for (result = 0; result < MAX_RESULTS; result++) {
       Serial.print(results[result].x);
       Serial.print(",");
@@ -170,10 +169,10 @@ void loop() {
       Serial.print(results[result].left_speed);
       Serial.print(",");
       Serial.print(results[result].right_speed);
-      // Serial.print(",");
-      // Serial.print(results[result].left_bump);
-      // Serial.print(",");
-      // Serial.print(results[result].right_bump);
+      Serial.print(",");
+      Serial.print(results[result].left_bump);
+      Serial.print(",");
+      Serial.print(results[result].right_bump);
       Serial.print("\n");
     }
   }
@@ -193,7 +192,7 @@ void loop() {
     // filled up the results array already.
     if (results_index < MAX_RESULTS) {
 
-      results[results_index].heading = observer.yaw;
+      results[results_index].heading = observer.yaw_g;
 
       // Increment result index for next time.
       results_index++;
@@ -201,20 +200,16 @@ void loop() {
   }
   if (state == 0) {
 
-    // if (results_index >= MAX_RESULTS) {
-    //   state = 1;
-    // }
+    if (results_index >= MAX_RESULTS) {
+      state = 1;
+      observer.buzzer.setBeepOnce(2, 250);
+    }
     observer.update();
 
-    Serial.print(observer.roll);
-    Serial.print(",");
-    Serial.print(observer.pitch);
-    Serial.print(",");
-    Serial.print(observer.yaw);
-    Serial.print("\n");
   } else if (state == 1) {
     int result;
-    Serial.print(":heading\n");
+    observer.buzzer.update();
+    Serial.print(":yaw\n");
     for (result = 0; result < MAX_RESULTS; result++) {
       Serial.print(results[result].heading);
       Serial.print("\n");
