@@ -12,11 +12,11 @@
 #define _CONFIGURATION_H
 
 // Experimentation parameters
-const int GOAL_DISTANCE = 1000; // mm
-const int GOAL_PTC_DISTANCE = 1220;
-const float TOTAL_TIME = 8000.0f; // ms
-const float BASE_SPEED = 0.20f;   // mm/ms
-const float DEMAND_SPEED = 0.35f; // mm/ms, initial speed
+const int GOAL_DISTANCE = 1000;     // mm
+const int GOAL_PTC_DISTANCE = 1220; // mm
+const float TOTAL_TIME = 8000.0f;   // ms
+const float BASE_SPEED = 0.20f;     // mm/ms
+const float DEMAND_SPEED = 0.35f;   // mm/ms, initial speed
 
 #define PUSHER
 // #define OBSERVER
@@ -25,8 +25,8 @@ const float DEMAND_SPEED = 0.35f; // mm/ms, initial speed
 #ifdef PUSHER
 
 // #define BUMPER_CONTROLLER
-#define POINT_TRACKING
-// #define IMPROVEMENT
+// #define POINT_TRACKING
+#define IMPROVEMENT
 
 struct Result {
   float x;
@@ -64,10 +64,10 @@ const uint8_t MAX_RESULTS = 65;
 #endif
 
 #ifdef IMPROVEMENT
-#define K1_PTC 0.000375f
-#define K2_PTC 0.04f
+#define K1_PTC 0.00039f // 0.000375f
+#define K2_PTC 0.04f    // 0.04f
 
-#define K_P_BUMP 0.0001f
+#define K_P_BUMP 0.0005f
 #define K_I_BUMP 0.0f
 #define K_D_BUMP 0.0f
 #endif

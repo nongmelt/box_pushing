@@ -20,9 +20,9 @@ class BumpSensors_c {
 public:
   float readings[BUMP_SENSORS_NUM];
 
-  float minimum[BUMP_SENSORS_NUM];
-  float maximum[BUMP_SENSORS_NUM];
-  float range[BUMP_SENSORS_NUM];
+  // float minimum[BUMP_SENSORS_NUM];
+  // float maximum[BUMP_SENSORS_NUM];
+  // float range[BUMP_SENSORS_NUM];
 
   float calibrated[BUMP_SENSORS_NUM];
 
@@ -33,35 +33,35 @@ public:
     // Configure the bump sensor pins
     for (int sensor = 0; sensor < BUMP_SENSORS_NUM; sensor++) {
       pinMode(BUMP_SENSOR_PINS[sensor], INPUT);
-      maximum[sensor] = 0.0;
-      minimum[sensor] = DEFAULT_TIMEOUT;
+      // maximum[sensor] = 0.0;
+      // minimum[sensor] = DEFAULT_TIMEOUT;
     }
 
   } // End of initialiseForDigital()
 
   void readSensors() { readSensorsDigital(); }
 
-  void calibration() {
-    readSensors();
-    for (int sensor = 0; sensor < BUMP_SENSORS_NUM; sensor++) {
-      float cur_reading = readings[sensor];
+  // void calibration() {
+  //   readSensors();
+  //   for (int sensor = 0; sensor < BUMP_SENSORS_NUM; sensor++) {
+  //     float cur_reading = readings[sensor];
 
-      if (cur_reading > maximum[sensor]) {
-        maximum[sensor] = cur_reading;
-      }
+  //     if (cur_reading > maximum[sensor]) {
+  //       maximum[sensor] = cur_reading;
+  //     }
 
-      if (cur_reading < minimum[sensor]) {
-        minimum[sensor] = cur_reading;
-      }
-    }
-  }
+  //     if (cur_reading < minimum[sensor]) {
+  //       minimum[sensor] = cur_reading;
+  //     }
+  //   }
+  // }
   void calcCalibrated() { calcCalibratedDigital(); }
 
-  void postCalibrated() {
-    for (int sensor = 0; sensor < BUMP_SENSORS_NUM; sensor++) {
-      range[sensor] = maximum[sensor] - minimum[sensor];
-    }
-  }
+  // void postCalibrated() {
+  //   for (int sensor = 0; sensor < BUMP_SENSORS_NUM; sensor++) {
+  //     range[sensor] = maximum[sensor] - minimum[sensor];
+  //   }
+  // }
 
 private:
   static const unsigned long DEFAULT_TIMEOUT = 4000;
@@ -108,7 +108,7 @@ private:
 
     // Apply calibration values, store in calibrated[]
     for (int sensor = 0; sensor < BUMP_SENSORS_NUM; sensor++) {
-      calibrated[sensor] = (readings[sensor] - minimum[sensor]) / range[sensor];
+      calibrated[sensor] = (readings[sensor] - MINIMUM[sensor]) / RANGE[sensor];
     }
   }
 }; // End of BumpSensors_c class defintion

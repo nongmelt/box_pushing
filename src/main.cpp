@@ -87,7 +87,7 @@ void setup() {
   ptc.initialise(K1_PTC, K2_PTC);
 
   ptc.calculateDesiredSpeed(pusher.pose.x, pusher.pose.y, pusher.pose.theta,
-                            GOAL_PTC_DISTANCE, 0.0f);
+                            pusher.pose.x + GOAL_PTC_DISTANCE, 0.0f);
   pusher.setDesiredSpeed(ptc.desired_left_speed, ptc.desired_right_speed);
 
 #endif
@@ -110,6 +110,8 @@ void setup() {
   delay(1000);
 
 #endif
+  // Start slower - 100, 200, 300, 400, 500
+  // delay(500);
 }
 
 // put your main code here, to run repeatedly:
